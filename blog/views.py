@@ -3,7 +3,7 @@ from django.contrib.auth.models import User, auth
 from django.contrib import messages
 from django.http import HttpResponse 
 from django.contrib.auth.decorators import login_required
-from .models import Profile, Post, LikePost
+from .models import Profile, Post, LikePost, FollowersCount
 
  
 # Create your views here.
@@ -52,6 +52,36 @@ def like_post(request):
         post.no_of_likes = post.no_of_likes-1
         post.save()
         return redirect('/')
+    
+    
+@login_required(login_url='login')
+def profile(request, pk): # pk - username юзера який прийшов із пошукової строки
+    user_object = User.objects.get(username=pk) # Дістаємо об'єкт юзера на якого зайшли 
+    user_profile = Profile.objects.get(user=user_object)# Дістаємо профіль юзера на якого зайшли, щоб достати звідти дані
+    user_posts = Post.objects.filter(user=pk) #Дістаємо пости юзера на якого зайшли
+    user_post_length = len(user_posts)# к-сть постів юзера на якоо
+
+    #follower = request.user.username
+    #user = pk
+#
+    #if FollowersCount.objects.filter(follower=follower, user=user).first():
+    #    button_text = 'Unfollow'
+    #else:
+    #    button_text = 'Follow'
+#
+    #user_followers = len(FollowersCount.objects.filter(user=pk))
+    #user_following = len(FollowersCount.objects.filter(follower=pk))
+#
+    context = {
+        'user_object': user_object,
+        'user_profile': user_profile,
+        'user_posts': user_posts,
+        'user_post_length': user_post_length,
+        # 'button_text': button_text,
+        # 'user_followers': user_followers,
+        # 'user_following': user_following,
+    }
+    return render(request, 'profile.html', context)
 
 def signup(request):
 
