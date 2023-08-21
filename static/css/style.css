@@ -10,10 +10,10 @@
 /*===============
 ***General Styling 
 ===============*/
-html,body{
+/* html,body{
 	font-family: calibri;
     background: #fff;
-}
+} */
 
 .bio{
     text-align: justify !important; width: 1100px; color: #000; font-family: calibri; margin-left:5%;text-decoration: none;outline: none;
