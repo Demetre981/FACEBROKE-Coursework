@@ -2,13 +2,23 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.models import User, auth
 from django.contrib import messages
 from django.http import HttpResponse 
+from django.db.models import Q
 from django.contrib.auth.decorators import login_required
-from .models import Profile, Post, LikePost, FollowersCount
+from .models import Notification, Profile, Post, LikePost, FollowersCount
 from itertools import chain
 import random
 
  
 # Create your views here.
+# def get_all_notifications_for_user(user):
+#     return Notification.objects.all().filter(Q(to_user=user) and ~Q(from_user=user))
+
+
+# def get_user_by_id(user_id):
+#     return User.objects.get(pk=user_id)
+
+
+
 
 @login_required(login_url='login')
 def index(request):    
@@ -27,10 +37,11 @@ def index(request):
         feed_lists = Post.objects.filter(user=usernames)
         feed.append(feed_lists)
 
-    feed_list = list(chain(*feed))
+    feed_list = list(chain(*feed)) # створює один ітератор з декількох
     
 
-    # comments start
+    # 
+    # suggestions start
     all_users = User.objects.all()
     user_following_all = []
 
@@ -80,7 +91,8 @@ def like_post(request):
     post_id = request.GET.get('post_id')# рандомно згенерований айдішнік посту
 
     post = Post.objects.get(id=post_id) # об'єкт класу пост який дістали за айдішніком
-
+    post_user_object = User.objects.get(username=post.user)
+    
     like_filter = LikePost.objects.filter(post_id=post_id, username=username).first()
 
     if like_filter == None:
@@ -88,14 +100,47 @@ def like_post(request):
         new_like.save()
         post.no_of_likes = post.no_of_likes+1# костиль
         post.save()
+        
+        n = Notification()
+        n.from_user = username
+        n.to_user = post.user
+        n.action = "liked"
+        n.record = "post"
+        n.save()
+        
         return redirect('/')
     else:
         like_filter.delete()
         post.no_of_likes = post.no_of_likes-1 # костиль 
         post.save()
+        
+        n = Notification()
+        n.from_user = username
+        n.to_user = post.user
+        n.action = "disliked" # Костильььь
+        n.record = "post"
+        n.save()
+        
         return redirect('/')
     
     
+    
+@login_required(login_url='login')
+def notifications(request):
+    user_object = User.objects.get(username=request.user.username)
+    user_profile = Profile.objects.get(user=user_object)
+    print(user_profile.user)
+    
+    
+    notifications = Notification.objects.all().filter(Q(to_user=user_profile.user) and ~Q(from_user=user_profile.user))
+    print(notifications)
+    return render(request, 'notifications.html', {'user_profile': user_profile, 'notifications': notifications})
+    
+def delete_notification(request, notification_id):
+    Notification.objects.filter(pk=notification_id).delete()
+    return HttpResponse('')
+
+
 @login_required(login_url='login')
 def search(request):
     user_object = User.objects.get(username=request.user.username)
@@ -148,6 +193,9 @@ def profile(request, pk): # pk - username юзера який прийшов і�
     }
     return render(request, 'profile.html', context)
 
+
+
+
 @login_required(login_url='login')
 def follow(request):
     if request.method == 'POST':
@@ -157,10 +205,27 @@ def follow(request):
         if FollowersCount.objects.filter(follower=follower, user=user).first():
             delete_follower = FollowersCount.objects.get(follower=follower, user=user)
             delete_follower.delete()
+            
+            n = Notification()
+            n.from_user = follower
+            n.to_user = user
+            n.action = "unfollowed"
+            n.record = "profile"
+            n.save()
+            
             return redirect('/profile/'+user)
+
         else:
             new_follower = FollowersCount.objects.create(follower=follower, user=user)
             new_follower.save()
+
+            n = Notification()
+            n.from_user = follower
+            n.to_user = user
+            n.action = "followed"
+            n.record = "profile"
+            n.save()
+            
             return redirect('/profile/'+user)
     else:
         return redirect('/')
