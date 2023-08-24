@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import index, signup, login, logout, settings, upload, like_post, profile, search, follow, notifications, delete_notification 
+from .views import index, signup, login, logout, settings, upload, like_post, profile, search, follow, notifications, delete_notification, copy_to_clipboard 
 
 urlpatterns = [
     path('', index, name='index'),
@@ -9,6 +9,7 @@ urlpatterns = [
     path('search', search, name='search'),
     path('notifications', notifications, name='notifications'),
     path('delete_notification/<int:notification_id>', delete_notification, name='delete_notification'),
+    path('share/<str:data>', copy_to_clipboard, name='copy_to_clipboard'),
     path('profile/<str:pk>', profile, name='profile'),
     path('like-post', like_post, name='like-post'),
     path('signup', signup, name='signup'),
