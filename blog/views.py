@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.models import User, auth
 from django.contrib import messages
 from django.http import HttpResponse 
@@ -16,10 +16,42 @@ import subprocess
 
 # def get_user_by_id(user_id):
 #     return User.objects.get(pk=user_id)
+def edit_record(request, post_id):
+    # record = get_object_or_404(model_class, pk=record_id)
+    # if request.method == 'POST':
+    #     form = form_class(request.POST, instance=record)
+    #     if form.is_valid():
+    #         form.save()
+    #         return redirect('/')
+    # else:
+    #     form = form_class(instance=record)
+    # return render(request, 'edit_record.html', {'form': form, 'model': record.__class__.__name__})
+    pass
+
+def delete_post(request, post_id):
+    post = get_object_or_404(Post, pk=post_id)
+    post.delete()
+    return redirect("/")
+
+    
+# def edit_question(request, post_id):
+#     # return edit_record(request, post_id)
+#     pass
+
+
+# def edit_answer(request, answer_id):
+#     return edit_record(request, Answer, AnswerForm, answer_id)
+
+
+def delete_object(request, post_id):
+    return delete_post(request, post_id)
+
+
 
 
 
 def copy_to_clipboard(request, data):
+    data = f"http://127.0.0.1:8000/share/{data}"
     subprocess.run("pbcopy", text=True, input=data)
     return redirect("/")
     
