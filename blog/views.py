@@ -4,50 +4,12 @@ from django.contrib import messages
 from django.http import HttpResponse 
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
-from .models import Notification, Profile, Post, LikePost, FollowersCount
+from .models import FavPost, Notification, Profile, Post, LikePost, FollowersCount
 from itertools import chain
 import random
 import subprocess
  
 # Create your views here.
-# def get_all_notifications_for_user(user):
-#     return Notification.objects.all().filter(Q(to_user=user) and ~Q(from_user=user))
-
-
-# def get_user_by_id(user_id):
-#     return User.objects.get(pk=user_id)
-def edit_record(request, post_id):
-    # record = get_object_or_404(model_class, pk=record_id)
-    # if request.method == 'POST':
-    #     form = form_class(request.POST, instance=record)
-    #     if form.is_valid():
-    #         form.save()
-    #         return redirect('/')
-    # else:
-    #     form = form_class(instance=record)
-    # return render(request, 'edit_record.html', {'form': form, 'model': record.__class__.__name__})
-    pass
-
-def delete_post(request, post_id):
-    post = get_object_or_404(Post, pk=post_id)
-    post.delete()
-    return redirect("/")
-
-    
-# def edit_question(request, post_id):
-#     # return edit_record(request, post_id)
-#     pass
-
-
-# def edit_answer(request, answer_id):
-#     return edit_record(request, Answer, AnswerForm, answer_id)
-
-
-def delete_object(request, post_id):
-    return delete_post(request, post_id)
-
-
-
 
 
 def copy_to_clipboard(request, data):
@@ -56,15 +18,50 @@ def copy_to_clipboard(request, data):
     return redirect("/")
     
 
+@login_required(login_url='login')
+def edit_post(request, post_id):
+    post = Post.objects.get(id=post_id)# 
+    
+    if request.method == "POST":
+        if request.FILES.get("image") == None:
+            image = post.image
+            caption = request.POST["caption"]
+            user = post.user
+            
+            post.image = image
+            post.caption = caption
+            post.user = user
+            
+            post.save()
+            
+        if request.FILES.get("image") != None:
+            image = request.FILES.get("image")
+            caption = request.POST["caption"]
+            user = post.user
+            
+            post.image = image
+            post.caption = caption
+            post.user = user
+            
+            post.save()
+            
+        return redirect(f"/edit/{post.id}")
+    return render(request, 'edit.html', {"post": post}) 
+
+    
+    
+
 
 @login_required(login_url='login')
-def index(request):    
+def index(request): 
     user_object = User.objects.get(username=request.user.username)# Ми створюєм обʼєкт класа ЮЗЕР і юзаємо його для профілю юзера, 
     user_profile = Profile.objects.get(user=user_object)          #бо в моделі вказано ForeignKey i нам треба аву профілю
     
+    # comment
     user_following_list = []
     feed = []
 
+    
     user_following = FollowersCount.objects.filter(follower=request.user.username)
     print(user_following)
     for users in user_following:
@@ -173,9 +170,17 @@ def notifications(request):
     print(notifications)
     return render(request, 'notifications.html', {'user_profile': user_profile, 'notifications': notifications})
     
+    
 def delete_notification(request, notification_id):
     Notification.objects.filter(pk=notification_id).delete()
     return HttpResponse('')
+
+
+@login_required(login_url='login')
+def delete_post(request, post_id):
+    post = get_object_or_404(Post, pk=post_id)
+    post.delete()
+    return redirect("/")
 
 
 @login_required(login_url='login')
@@ -230,6 +235,23 @@ def profile(request, pk): # pk - username юзера який прийшов і�
     }
     return render(request, 'profile.html', context)
 
+@login_required(login_url='login')
+def add_to_favourites(request, post_id):
+    post = Post.objects.get(id=post_id)
+    
+    FavPost.objects.create(user=request.user, post=post)
+    return redirect("/favourites")
+    
+
+
+@login_required(login_url='login')
+def render_favourites(request):
+
+    fav_posts = FavPost.objects.filter(user=request.user)
+    
+    return render(request, 'favourites.html', {"user_fav_posts": fav_posts})
+
+    
 
 
 
